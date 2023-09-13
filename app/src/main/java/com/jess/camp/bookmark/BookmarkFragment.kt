@@ -9,10 +9,13 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import com.jess.camp.databinding.BookmarkFragmentBinding
+import com.jess.camp.main.MainActivity
 import com.jess.camp.todo.content.TodoContentActivity
 import com.jess.camp.todo.content.TodoContentType
 import com.jess.camp.todo.home.TodoModel
+import com.jess.camp.todo.home.TodoViewModel
 
 class BookmarkFragment : Fragment() {
 
@@ -23,8 +26,18 @@ class BookmarkFragment : Fragment() {
     private var _binding: BookmarkFragmentBinding? = null
     private val binding get() = _binding!!
 
+    private val viewModel: BookmarkViewModel by lazy {
+        ViewModelProvider(
+            this,
+            ViewModelProvider.NewInstanceFactory()
+        ).get(BookmarkViewModel::class.java)
+    }
+
     private val listAdapter by lazy {
-        BookmarkListAdapter()
+        BookmarkListAdapter { position, item ->
+            modifyItemAtTodoTab(item)
+            removeItem(position)
+        }
     }
 
     override fun onCreateView(
@@ -39,19 +52,37 @@ class BookmarkFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initView()
+        initModel()
     }
 
     private fun initView() = with(binding) {
         bookmarkList.adapter = listAdapter
     }
 
-    override fun onResume() {
-        super.onResume()
-        listAdapter.notifyDataSetChanged()
+    private fun initModel() {
+        viewModel.list.observe(viewLifecycleOwner) {
+            listAdapter.submitList(it)
+        }
     }
 
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
+    }
+
+    fun addItem(item: BookmarkModel) {
+        viewModel.addBookmarkItem(item)
+    }
+
+    private fun removeItem(
+        position: Int
+    ) {
+        viewModel.removeBookmarkItem(position)
+    }
+
+    private fun modifyItemAtTodoTab(
+        item: BookmarkModel
+    ) {
+        (activity as? MainActivity)?.modifyTodoItem(item)
     }
 }

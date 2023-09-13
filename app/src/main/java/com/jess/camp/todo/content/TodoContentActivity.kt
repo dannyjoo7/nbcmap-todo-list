@@ -93,7 +93,7 @@ class TodoContentActivity : AppCompatActivity() {
                 putExtra(
                     EXTRA_TODO_MODEL,
                     TodoModel(
-                        TodoManager.getNoneListSize() - 1,
+                        TodoManager.getNoneListSize().toLong() - 1,
                         todoTitle.text.toString(),
                         todoDescription.text.toString()
                     )

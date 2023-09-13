@@ -8,10 +8,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.jess.camp.R
+import com.jess.camp.bookmark.BookmarkFragment
+import com.jess.camp.bookmark.BookmarkModel
+import com.jess.camp.bookmark.toTodoModel
 import com.jess.camp.databinding.MainActivityBinding
 import com.jess.camp.todo.content.TodoContentActivity
 import com.jess.camp.todo.home.TodoFragment
 import com.jess.camp.todo.home.TodoModel
+import com.jess.camp.todo.home.toBookmarkModel
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,7 +40,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 val todoFragment = viewPagerAdapter.getFragment(0) as? TodoFragment
-                todoFragment?.setDodoContent(todoModel)
+                todoFragment?.addTodoItem(todoModel)
             }
         }
 
@@ -77,7 +81,18 @@ class MainActivity : AppCompatActivity() {
                 TodoContentActivity.newIntentForAdd(this@MainActivity)
             )
         }
+    }
 
+    fun addBookmarkItem(item: TodoModel) {
+        val fragment = viewPagerAdapter.getFragment(1) as? BookmarkFragment
+        fragment?.addItem(item.toBookmarkModel())
+    }
 
+    fun modifyTodoItem(item: BookmarkModel) {
+        val fragment = viewPagerAdapter.getFragment(0) as? TodoFragment
+        val todoItem = item.toTodoModel()
+        fragment?.modifyTodoItem(
+            todoModel = todoItem
+        )
     }
 }

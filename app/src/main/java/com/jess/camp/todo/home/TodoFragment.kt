@@ -3,13 +3,14 @@ package com.jess.camp.todo.home
 import android.app.Activity
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import com.jess.camp.databinding.TodoFragmentBinding
+import com.jess.camp.main.MainActivity
 import com.jess.camp.todo.content.TodoContentActivity
 import com.jess.camp.todo.content.TodoContentType
 
@@ -21,6 +22,13 @@ class TodoFragment : Fragment() {
 
     private var _binding: TodoFragmentBinding? = null
     private val binding get() = _binding!!
+
+    private val viewModel by lazy {
+        ViewModelProvider(
+            this,
+            ViewModelProvider.NewInstanceFactory()
+        ).get(TodoViewModel::class.java)
+    }
 
     private val editTodoLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -43,8 +51,7 @@ class TodoFragment : Fragment() {
                 // entry type 에 따라 기능 분리
                 when (entryType) {
                     TodoContentType.EDIT.name -> {
-                        modifyTodoItem(position, todoModel)
-                        Log.d("todofragment", "Called modifyTodoItem")
+                        modifyTodoItem(todoModel)
                     }
 
                     TodoContentType.REMOVE.name -> removeItemTodoItem(position)
@@ -53,16 +60,25 @@ class TodoFragment : Fragment() {
         }
 
     private val listAdapter by lazy {
-        TodoListAdapter { position, item ->
-            editTodoLauncher.launch(
-                TodoContentActivity.newIntentForEdit(
-                    requireContext(),
-                    position,
-                    item
+        TodoListAdapter(
+            onClickItem = { position, item ->
+                editTodoLauncher.launch(
+                    TodoContentActivity.newIntentForEdit(
+                        requireContext(),
+                        position,
+                        item
+                    )
                 )
-            )
-        }
+            },
+            onBookmarkChecked = { position, item ->
+                modifyTodoItem(
+                    todoModel = item
+                )
+                addItemToBookmarkTab(item)
+            }
+        )
     }
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -76,40 +92,46 @@ class TodoFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         initView()
+        initModel()
     }
 
     private fun initView() = with(binding) {
         todoList.adapter = listAdapter
     }
 
-    fun setDodoContent(todoModel: TodoModel?) {
-        listAdapter.addItem(todoModel)
+    private fun initModel() {
+        viewModel.todoList.observe(viewLifecycleOwner) {
+            listAdapter.submitList(it)
+        }
+    }
+
+    fun addTodoItem(todoModel: TodoModel?) {
+        if (todoModel == null) {
+            return
+        }
+        viewModel.addTodo(todoModel)
     }
 
     /**
      * 아이템을 수정합니다.
      */
-    private fun modifyTodoItem(
-        position: Int?,
+    fun modifyTodoItem(
         todoModel: TodoModel?
     ) {
-        Log.d("todofragment", "Called modifyTodoItem")
-        listAdapter.modifyItem(
-            position,
-            todoModel
-        )
+        viewModel.modifyTodo(todoModel)
     }
 
     /**
      * 아이템을 삭제합니다.
      */
     private fun removeItemTodoItem(position: Int?) {
-        listAdapter.removeItem(position)
+        viewModel.removeTodo(position)
     }
 
-    override fun onResume() {
-        super.onResume()
-        listAdapter.notifyDataSetChanged()
+    private fun addItemToBookmarkTab(
+        item: TodoModel
+    ) {
+        (activity as? MainActivity)?.addBookmarkItem(item)
     }
 
     override fun onDestroyView() {
