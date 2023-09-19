@@ -1,21 +1,15 @@
 package com.jess.camp.bookmark
 
-import android.app.Activity
-import android.os.Build
+
+import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.jess.camp.databinding.BookmarkFragmentBinding
 import com.jess.camp.main.MainActivity
-import com.jess.camp.todo.content.TodoContentActivity
-import com.jess.camp.todo.content.TodoContentType
-import com.jess.camp.todo.home.TodoModel
-import com.jess.camp.todo.home.TodoViewModel
 
 class BookmarkFragment : Fragment() {
 
@@ -55,6 +49,11 @@ class BookmarkFragment : Fragment() {
         initModel()
     }
 
+    override fun onResume() {
+        super.onResume()
+        initView()
+    }
+
     private fun initView() = with(binding) {
         bookmarkList.adapter = listAdapter
     }
@@ -68,6 +67,10 @@ class BookmarkFragment : Fragment() {
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
     }
 
     fun addItem(item: BookmarkModel) {

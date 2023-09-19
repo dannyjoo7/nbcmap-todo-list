@@ -3,6 +3,7 @@ package com.jess.camp.todo.home
 import android.app.Activity
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -85,6 +86,7 @@ class TodoFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        Log.d("생명주기", "onCreateView")
         _binding = TodoFragmentBinding.inflate(inflater, container, false)
         return binding.root
     }

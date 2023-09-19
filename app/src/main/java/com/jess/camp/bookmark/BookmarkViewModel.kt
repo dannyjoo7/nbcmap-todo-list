@@ -3,11 +3,12 @@ package com.jess.camp.bookmark
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.jess.camp.DataRepository
 
 class BookmarkViewModel : ViewModel() {
 
-    private val _list: MutableLiveData<List<BookmarkModel>> = MutableLiveData()
-    val list: LiveData<List<BookmarkModel>> get() = _list
+    private val _list: MutableLiveData<MutableList<BookmarkModel>> = MutableLiveData(DataRepository.getBookMarkedList())
+    val list: LiveData<MutableList<BookmarkModel>> get() = _list
 
     fun addBookmarkItem(
         bookmarkModel: BookmarkModel?
