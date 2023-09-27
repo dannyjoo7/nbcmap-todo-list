@@ -9,7 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import com.jess.camp.R
-import com.jess.camp.DataRepository
+import com.jess.camp.data.ItemRepository
 import com.jess.camp.databinding.TodoAddActivityBinding
 import com.jess.camp.todo.home.TodoModel
 
@@ -93,7 +93,7 @@ class TodoContentActivity : AppCompatActivity() {
                 putExtra(
                     EXTRA_TODO_MODEL,
                     TodoModel(
-                        DataRepository.getTodoListSize().toLong() - 1,
+                        0,
                         todoTitle.text.toString(),
                         todoDescription.text.toString()
                     )

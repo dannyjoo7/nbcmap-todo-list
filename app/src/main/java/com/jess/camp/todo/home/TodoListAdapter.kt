@@ -1,5 +1,6 @@
 package com.jess.camp.todo.home
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
@@ -48,9 +49,9 @@ class TodoListAdapter(
                             bookmark = isChecked
                         )
                     )
+                    Log.d("switch", item.toString())
                 }
             }
         }
     }
-
 }

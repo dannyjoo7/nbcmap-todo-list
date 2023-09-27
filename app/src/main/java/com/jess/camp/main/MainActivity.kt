@@ -5,12 +5,14 @@ import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import com.jess.camp.R
 import com.jess.camp.bookmark.BookmarkFragment
 import com.jess.camp.bookmark.BookmarkModel
 import com.jess.camp.bookmark.toTodoModel
+import com.jess.camp.data.ItemRepository
 import com.jess.camp.databinding.MainActivityBinding
 import com.jess.camp.todo.content.TodoContentActivity
 import com.jess.camp.todo.home.TodoFragment
@@ -23,6 +25,13 @@ class MainActivity : AppCompatActivity() {
 
     private val viewPagerAdapter by lazy {
         MainViewPagerAdapter(this@MainActivity)
+    }
+
+    private val viewModel by lazy {
+        ViewModelProvider(
+            this,
+            MainSharedViewModelFactory()
+        )[MainSharedViewModel::class.java]
     }
 
     private val addTodoLauncher =
@@ -44,6 +53,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = MainActivityBinding.inflate(layoutInflater)
@@ -56,16 +66,16 @@ class MainActivity : AppCompatActivity() {
         toolBar.title = getString(R.string.app_name)
 
         viewPager.adapter = viewPagerAdapter
+        viewPager.offscreenPageLimit = viewPagerAdapter.itemCount
+
         viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
 
             override fun onPageSelected(position: Int) {
                 super.onPageSelected(position)
                 if (viewPagerAdapter.getFragment(position) is TodoFragment) {
                     fabAddTodo.show()
-
                 } else {
                     fabAddTodo.hide()
-
                 }
             }
         })
@@ -81,18 +91,5 @@ class MainActivity : AppCompatActivity() {
                 TodoContentActivity.newIntentForAdd(this@MainActivity)
             )
         }
-    }
-
-    fun addBookmarkItem(item: TodoModel) {
-        val fragment = viewPagerAdapter.getFragment(1) as? BookmarkFragment
-        fragment?.addItem(item.toBookmarkModel())
-    }
-
-    fun modifyTodoItem(item: BookmarkModel) {
-        val fragment = viewPagerAdapter.getFragment(0) as? TodoFragment
-        val todoItem = item.toTodoModel()
-        fragment?.modifyTodoItem(
-            todoModel = todoItem
-        )
     }
 }

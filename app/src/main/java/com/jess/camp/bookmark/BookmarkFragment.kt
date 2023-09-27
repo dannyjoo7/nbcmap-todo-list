@@ -3,16 +3,19 @@ package com.jess.camp.bookmark
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.jess.camp.data.ItemRepository
 import com.jess.camp.databinding.BookmarkFragmentBinding
 import com.jess.camp.main.MainActivity
+import com.jess.camp.main.MainSharedEventForBookmark
+import com.jess.camp.main.MainSharedViewModel
 
 class BookmarkFragment : Fragment() {
-
     companion object {
         fun newInstance() = BookmarkFragment()
     }
@@ -20,11 +23,15 @@ class BookmarkFragment : Fragment() {
     private var _binding: BookmarkFragmentBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: BookmarkViewModel by lazy {
+    private val mainViewModel: MainSharedViewModel by lazy {
+        ViewModelProvider(requireActivity())[MainSharedViewModel::class.java]
+    }
+
+    private val bookmarkViewModel: BookmarkViewModel by lazy {
         ViewModelProvider(
             this,
-            ViewModelProvider.NewInstanceFactory()
-        ).get(BookmarkViewModel::class.java)
+            BookmarkViewModelFactory(ItemRepository())
+        )[BookmarkViewModel::class.java]
     }
 
     private val listAdapter by lazy {
@@ -59,8 +66,16 @@ class BookmarkFragment : Fragment() {
     }
 
     private fun initModel() {
-        viewModel.list.observe(viewLifecycleOwner) {
-            listAdapter.submitList(it)
+        bookmarkViewModel.list.observe(viewLifecycleOwner) {
+            listAdapter.submitList(it.toMutableList())
+        }
+        mainViewModel.bookmarkEvent.observe(viewLifecycleOwner) { event ->
+            when (event) {
+                is MainSharedEventForBookmark.UpdateBookmarkItems -> {
+                    bookmarkViewModel.updateBookmarkItems(event.items)
+//                    Log.d("book", event.items.toString())
+                }
+            }
         }
     }
 
@@ -73,19 +88,15 @@ class BookmarkFragment : Fragment() {
         super.onAttach(context)
     }
 
-    fun addItem(item: BookmarkModel) {
-        viewModel.addBookmarkItem(item)
-    }
-
     private fun removeItem(
         position: Int
     ) {
-        viewModel.removeBookmarkItem(position)
+        bookmarkViewModel.removeBookmarkItem(position)
     }
 
     private fun modifyItemAtTodoTab(
         item: BookmarkModel
     ) {
-        (activity as? MainActivity)?.modifyTodoItem(item)
+        mainViewModel.updateTodoItem(item)
     }
 }

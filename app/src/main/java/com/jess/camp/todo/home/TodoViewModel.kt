@@ -3,64 +3,84 @@ package com.jess.camp.todo.home
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.jess.camp.bookmark.BookmarkViewModel
+import com.jess.camp.data.ItemRepository
 
-class TodoViewModel : ViewModel() {
-    private val _todoList = MutableLiveData<List<TodoModel>>()
+class TodoViewModel(
+    private val repository: ItemRepository,
+) : ViewModel() {
+    private val _list: MutableLiveData<List<TodoModel>> = MutableLiveData()
+    val list: LiveData<List<TodoModel>> get() = _list
 
     init {
-        initList()
+        _list.value = repository.getTodoList()
     }
 
-    val todoList: LiveData<List<TodoModel>>
-        get() = _todoList
-
-    fun initList() {
-        val currentList = _todoList.value?.toMutableList() ?: mutableListOf()
-        for (i in 0..4) {
-            currentList.add(TodoModel(i.toLong(), "title $i", "description $i"))
-        }
-        _todoList.value = currentList
-    }
-
-    fun addTodo(item: TodoModel) {
-        val currentList = _todoList.value?.toMutableList() ?: mutableListOf()
-        currentList.add(item)
-        _todoList.value = currentList
-    }
-
-    fun removeTodo(
-        position: Int?
+    fun addTodoItem(
+        item: TodoModel?
     ) {
-        if (position == null) {
+        if (item == null) {
             return
         }
-        val currentList = _todoList.value?.toMutableList() ?: mutableListOf()
+
+        val currentList = list.value.orEmpty().toMutableList()
+        _list.value = currentList.apply {
+            add(
+                item.copy(
+                    id = list.value?.size?.toLong() ?: 0
+                )
+            )
+        }
+    }
+
+    fun modifyTodoItem(
+        item: TodoModel?
+    ) {
+
+        fun findIndex(item: TodoModel?): Int {
+            val currentList = list.value.orEmpty().toMutableList()
+            // 같은 id 를 찾음
+            val findTodo = currentList.find {
+                it.id == item?.id
+            }
+
+            // 찾은 model 기준으로 index 를 찾음
+            return currentList.indexOf(findTodo)
+        }
+
+        if (item == null) {
+            return
+        }
+
+        // position 이 null 이면 indexOf 실시
+        val findPosition = findIndex(item)
+        if (findPosition < 0) {
+            return
+        }
+
+        val currentList = list.value.orEmpty().toMutableList()
+        currentList[findPosition] = item
+        _list.value = currentList
+    }
+
+    fun removeTodoItem(position: Int?) {
+        if (position == null || position < 0) {
+            return
+        }
+
+        val currentList = list.value.orEmpty().toMutableList()
         currentList.removeAt(position)
-        _todoList.value = currentList
+        _list.value = currentList
     }
+}
 
-    fun modifyTodo(
-        todoModel: TodoModel?
-    ) {
-        if (todoModel == null) {
-            return
-        }
-        val currentList = _todoList.value?.toMutableList() ?: mutableListOf()
-        val position = currentList.indexOf(currentList.find { it.id == todoModel.id })
-        currentList[position] = todoModel
-        _todoList.value = currentList
-    }
-
-    fun bookmarkedItem(todoModel: TodoModel?, position: Int?) {
-        if (position == null || position < 0 || todoModel == null) {
-            return
-        }
-        val currentList = _todoList.value?.toMutableList() ?: mutableListOf()
-        currentList[position].bookmark = !currentList[position].bookmark
-        _todoList.value = currentList
-    }
-
-    fun updateList(): MutableList<TodoModel> {
-        return _todoList.value?.toMutableList() ?: mutableListOf()
+class TodoViewModelFactory(
+    private val repository: ItemRepository,
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return TodoViewModel(
+            repository,
+        ) as T
     }
 }

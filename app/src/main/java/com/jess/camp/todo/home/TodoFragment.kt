@@ -10,8 +10,10 @@ import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.jess.camp.data.ItemRepository
 import com.jess.camp.databinding.TodoFragmentBinding
-import com.jess.camp.main.MainActivity
+import com.jess.camp.main.MainSharedEventForTodo
+import com.jess.camp.main.MainSharedViewModel
 import com.jess.camp.todo.content.TodoContentActivity
 import com.jess.camp.todo.content.TodoContentType
 
@@ -24,11 +26,15 @@ class TodoFragment : Fragment() {
     private var _binding: TodoFragmentBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel by lazy {
+    private val mainViewModel: MainSharedViewModel by lazy {
+        ViewModelProvider(requireActivity())[MainSharedViewModel::class.java]
+    }
+
+    private val todoViewModel by lazy {
         ViewModelProvider(
             this,
-            ViewModelProvider.NewInstanceFactory()
-        ).get(TodoViewModel::class.java)
+            TodoViewModelFactory(ItemRepository())
+        )[TodoViewModel::class.java]
     }
 
     private val editTodoLauncher =
@@ -71,22 +77,19 @@ class TodoFragment : Fragment() {
                     )
                 )
             },
-            onBookmarkChecked = { position, item ->
+            onBookmarkChecked = { _, item ->
                 modifyTodoItem(
                     todoModel = item
                 )
-                addItemToBookmarkTab(item)
             }
         )
     }
-
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        Log.d("생명주기", "onCreateView")
         _binding = TodoFragmentBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -102,8 +105,16 @@ class TodoFragment : Fragment() {
     }
 
     private fun initModel() {
-        viewModel.todoList.observe(viewLifecycleOwner) {
-            listAdapter.submitList(it)
+        todoViewModel.list.observe(viewLifecycleOwner) {
+            listAdapter.submitList(it.toMutableList())
+            mainViewModel.bookmarkEvent
+        }
+        mainViewModel.todoEvent.observe(viewLifecycleOwner) { event ->
+            when (event) {
+                is MainSharedEventForTodo.UpdateTodoItem -> {
+                    todoViewModel.modifyTodoItem(event.item)
+                }
+            }
         }
     }
 
@@ -111,29 +122,22 @@ class TodoFragment : Fragment() {
         if (todoModel == null) {
             return
         }
-        viewModel.addTodo(todoModel)
+        todoViewModel.addTodoItem(todoModel)
     }
 
-    /**
-     * 아이템을 수정합니다.
-     */
-    fun modifyTodoItem(
+    private fun modifyTodoItem(
         todoModel: TodoModel?
     ) {
-        viewModel.modifyTodo(todoModel)
+        todoViewModel.modifyTodoItem(todoModel)
+        mainViewModel.updateBookmarkItems(listAdapter.currentList)
     }
 
-    /**
-     * 아이템을 삭제합니다.
-     */
     private fun removeItemTodoItem(position: Int?) {
-        viewModel.removeTodo(position)
+        todoViewModel.removeTodoItem(position)
     }
 
-    private fun addItemToBookmarkTab(
-        item: TodoModel
-    ) {
-        (activity as? MainActivity)?.addBookmarkItem(item)
+    private fun addItemToBookmarkTab() {
+        mainViewModel.updateBookmarkItems(listAdapter.currentList)
     }
 
     override fun onDestroyView() {
